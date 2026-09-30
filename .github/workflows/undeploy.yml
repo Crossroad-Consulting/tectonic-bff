@@ -1,0 +1,81 @@
+name: Undeploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  deactivate-revision:
+    name: Deactivate revision to container app on ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      # url:
+    if: github.event.pull_request.draft == false && github.event_name == 'pull_request' && github.event.action != 'opened'
+    timeout-minutes: 5
+    steps:
+      - name: Set env variables
+        env:
+          COMMIT_HASH: |
+            ${{
+              github.event.action == 'closed' && github.event.pull_request.head.sha ||
+              github.event.action == 'synchronize' && github.event.before
+            }}
+        run: |
+          echo "sha=${COMMIT_HASH:0:7}" >> "$GITHUB_ENV"
+
+      - name: Log into Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get traffic weight of revision
+        run: |
+          az containerapp revision show \
+          --resource-group ${{ vars.RESOURCE_GROUP }} \
+          --name ${{ vars.NAME }} \
+          --revision ${{ vars.NAME }}--${{ env.sha }} \
+          -o json \
+            | jq '.properties.trafficWeight' \
+            | xargs -I{} echo "traffic={}" >> "$GITHUB_ENV"
+
+      - name: Verify traffic weight of revision is 0
+        run: |
+          if [ ${{ env.traffic }} -gt 0 ]; then
+            echo "Traffic weight of revision ${{ env.sha }} under container app ${{ vars.NAME }} is not 0. Set 0 to the traffic weight of the revision before deactivation."
+            exit 1
+          fi
+
+      - name: Deactivate revision
+        run: |
+          az containerapp revision deactivate \
+          --resource-group ${{ vars.RESOURCE_GROUP }} \
+          --name ${{ vars.NAME }} \
+          --revision ${{ vars.NAME }}--${{ env.sha }}
+
+      - name: Find comment about revision
+        uses: peter-evans/find-comment@v4
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: Revision ${{ vars.NAME }}--${{ env.sha }} is created.
+
+      - name: Update comment about revision
+        if: steps.find-comment.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            Revision ${{ vars.NAME }}--${{ env.sha }} is deactivated.

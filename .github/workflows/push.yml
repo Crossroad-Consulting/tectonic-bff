@@ -1,0 +1,70 @@
+name: Push
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    outputs:
+      meta:
+        description: "Meta data of the pushed docker image"
+        value: ${{ jobs.push.outputs.meta }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  push:
+    name: Push docker image to container registry on ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      # url:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.draft == false && github.event.action != 'closed')
+    outputs:
+      meta: ${{ steps.meta.outputs.json }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ vars.APP_NAME }}
+          path: build
+
+      - name: Set permissions on artifact
+        run: |
+          chmod +x build/${{ vars.APP_NAME }}
+          ls -lah build
+
+      - name: Log into Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log into registry ${{ vars.REGISTRY }}
+        run: az acr login --name ${{ vars.REGISTRY }}
+
+      - name: Extract docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ vars.REGISTRY }}/${{ vars.NAME }}/${{ vars.APP_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,enable=false
+
+      - name: Build docker image and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

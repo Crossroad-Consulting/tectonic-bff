@@ -1,0 +1,41 @@
+name: Run Github Actions for Production environment
+
+on:
+  push:
+    # branches:
+    #   - 'main'
+    tags:
+      - 'v*'
+  pull_request:
+    paths-ignore:
+      - '.devcontainer/**'
+      - '.github/**'
+      - '.vscode/**'
+    types:
+      - opened
+      - synchronize
+      - closed
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+  
+  push:
+    needs: build
+    uses: ./.github/workflows/push.yml
+    with:
+      environment: production
+
+  deploy:
+    needs: push
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      image: ${{ fromJSON(needs.push.outputs.meta).tags[0] }}
+      label: ${{ fromJSON(needs.push.outputs.meta).labels['org.opencontainers.image.version'] }}
+  
+  undeploy:
+    uses: ./.github/workflows/undeploy.yml
+    with:
+      environment: production

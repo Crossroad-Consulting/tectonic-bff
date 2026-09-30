@@ -1,0 +1,10 @@
+{
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "html.format.wrapAttributes": "preserve",
+	"html.format.indentHandlebars": true,
+	"html.format.indentInnerHtml": true,
+	"html.format.templating": true,
+	"html.format.wrapLineLength": 0,
+  "terminal.integrated.scrollback": 64000,
+}

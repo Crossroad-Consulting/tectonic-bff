@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@source "/app/templates";
+
+@theme {
+  --color-placeholder-primary: #aa1834;
+  --color-placeholder-dark: #031f30;
+  --color-placeholder-border: #ebebeb;
+  --color-placeholder-surface: #f7f7f7;
+  --color-placeholder-light: #ffffff;
+}

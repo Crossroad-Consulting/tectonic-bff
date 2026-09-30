@@ -1,0 +1,11 @@
+services:
+  tailwind:
+    build:
+      context: ./tailwind
+      dockerfile: Dockerfile
+    tty: true
+    restart: always
+    volumes:
+      - ./tailwind:/app/src
+      - ./assets:/app/dst
+      - ./templates:/app/templates

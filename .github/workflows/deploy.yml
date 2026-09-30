@@ -1,0 +1,120 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      label:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    name: Deploy container app to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      # url:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 5
+    steps:
+      - name: Set env variables
+        env:
+          LABEL: ${{ inputs.label }}
+        run: |
+          echo "sha=${GITHUB_SHA:0:7}" >> "$GITHUB_ENV"
+          echo "label=v${LABEL//./-}" >> "$GITHUB_ENV"
+           
+      - uses: actions/checkout@v7
+
+      - name: Log into Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy
+        run: |
+          az deployment group create --resource-group ${{ vars.RESOURCE_GROUP }} --template-file deploy/container-app.bicep \
+          --parameters \
+            image='${{ inputs.image }}' \
+            revisionSuffix='${{ env.sha }}' \
+            traffic='[{"label":"${{ env.label }}","revisionName":"${{ vars.NAME }}--${{ env.sha }}","weight":100}]'
+
+  add-revision:
+    name: Add revision to container app on ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      # url:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.draft == false
+    timeout-minutes: 5
+    steps:
+      - name: Set env variables
+        env:
+          COMMIT_HASH: ${{ github.event.pull_request.head.sha }}
+          LABEL: ${{ inputs.label }}
+        run: |
+          echo "sha=${COMMIT_HASH:0:7}" >> "$GITHUB_ENV"
+          echo "label=${LABEL//./-}" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+
+      - name: Log into Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Get and update traffic
+        run: |
+          az containerapp ingress traffic show \
+          --resource-group ${{ vars.RESOURCE_GROUP }} \
+          --name ${{ vars.NAME }} \
+          -o json \
+            | jq '[.[] | select(.weight > 0)]' \
+            | jq '(.[] | select(.lastRevision == true) | .lastRevision ) = false' \
+            | jq 'del(.[] | select(.label == "${{ env.label }}") | .label)' \
+            | jq '. += [{"label":"${{ env.label }}","revisionName": "${{ vars.NAME }}--${{ env.sha }}", "weight": 0}]' \
+            | jq -c '.' \
+            | xargs -0 -I{} echo "traffic={}" >> "$GITHUB_ENV"
+
+      - name: Deploy
+        run: |
+          az deployment group create \
+          --resource-group ${{ vars.RESOURCE_GROUP }} \
+          --template-file deploy/container-app.bicep \
+          --parameters \
+            image='${{ inputs.image }}' \
+            revisionSuffix='${{ env.sha }}' \
+            traffic='${{ env.traffic }}'
+
+      - name: Get fqdn
+        run: |
+          az containerapp revision show \
+          --resource-group ${{ vars.RESOURCE_GROUP }} \
+          --name ${{ vars.NAME }} \
+          --revision ${{ vars.NAME }}--${{ env.sha }} \
+          -o json \
+            | jq '.properties.fqdn' \
+            | xargs -I{} echo "fqdn={}" >> "$GITHUB_ENV"
+
+      - name: Add new comment to PR
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Revision ${{ vars.NAME }}--${{ env.sha }} is created.
+            https://${{ env.fqdn }}

@@ -1,16 +1,3 @@
-{{define "page"}}
-<div class="bff-stage">
-  <main class="bff-phone">
-    <div class="bff-screen">
-      <div class="bff-status"><span>9:41</span><span>5G&nbsp; ◼</span></div>
-      <header class="bff-header"><div><h2 id="bffTitle">Dag Sarah</h2><p id="bffSubtitle">Woensdag 30 september</p></div><button class="bff-avatar" id="themeToggle" aria-label="Wissel thema">SJ</button></header>
-      <section id="bffView" class="bff-scroll"></section>
-      <nav class="bff-tabs" aria-label="App"><button data-tab="home" aria-current="page">⌂<span>Home</span></button><button data-tab="tx">≡<span>Transacties</span></button><button data-tab="chat" class="bff-chat-tab"><b>◌</b><span>BFF</span></button><button data-tab="tasks">☑<span>Taken</span><i id="taskBadge">5</i></button><button data-tab="sources">⌘<span>Bronnen</span></button></nav>
-      <div id="bffSheet"></div><div id="bffToast" class="bff-toast" hidden></div>
-    </div>
-  </main>
-</div>
-<script type="text/plain" aria-hidden="true">
 (() => {
   const accounts = [{name:'Zichtrekening', src:'KBC', mask:'BE•• 4821', amount:2914.55},{name:'Spaarrekening',src:'KBC',mask:'BE•• 7710',amount:14200},{name:'Maaltijdcheques',src:'Pluxee',mask:'kaart •• 55',amount:84},{name:'Beleggingsportefeuille',src:'Bolero',mask:'2 ETF’s',amount:9870.40}];
   const transactions = [['Vandaag','Loon september · Nordwerk NV',2874.12,'Inkomen','KBC'],['Gisteren','Colruyt Leuven',-68.43,'Boodschappen','Apple Pay'],['Gisteren','Bakkerij De Mol',-9.80,'Boodschappen','Pluxee'],['28 sep','Netflix',-13.99,'Abonnementen','KBC'],['27 sep','Café Belge · Oude Markt',-24.50,'Uit eten','Apple Pay'],['25 sep','Aankoop iShares MSCI World',-250,'Beleggen','Bolero'],['22 sep','Engie Electrabel voorschot',-138,'Energie','KBC'],['20 sep','Proximus internet + mobiel',-79,'Abonnementen','KBC'],['18 sep','Huur appartement Leuven',-925,'Wonen','KBC']];
@@ -29,6 +16,3 @@
   function render(){ document.getElementById('bffTitle').textContent=tab==='home'?'Dag Sarah':tab==='tx'?'Transacties':tab==='tasks'?'Taken':tab==='sources'?'Bronnen':'BFF'; document.getElementById('bffSubtitle').textContent=tab==='home'?'Woensdag 30 september':'Sarah · synthetische demo'; ({home,tx,tasks,chat,sources}[tab])(); }
   document.querySelectorAll('.bff-tabs button').forEach(b=>b.onclick=()=>go(b.dataset.tab)); document.getElementById('themeToggle').onclick=()=>{theme=theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;}; render();
 })();
-</script>
-<script src="/assets/bff.js" defer></script>
-{{end}}

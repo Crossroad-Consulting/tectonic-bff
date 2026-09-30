@@ -1,1 +1,0 @@
-FROM ghcr.io/crossroad-consulting/devcontainers/iaas:v2026.09.01

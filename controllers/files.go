@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/example/placeholder-webapp/context"
 	"github.com/example/placeholder-webapp/models"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type Files struct {
@@ -23,80 +21,10 @@ type Files struct {
 }
 
 func (f Files) List(w http.ResponseWriter, r *http.Request) {
-	type File struct {
-		Name        string
-		NameEscaped string
-		Size        string
-		Type        string
+	var data struct{ FullName string }
+	if user := context.User(r.Context()); user != nil {
+		data.FullName = user.FullName
 	}
-	var data struct {
-		FullName  string
-		General   []File
-		Safety    []File
-		Schedules []File
-	}
-
-	general, err := f.FilesService.ListGeneral()
-	if err != nil {
-		f.Templates.List.Execute(w, r, data, fmt.Errorf("list general files: %w", err))
-		return
-	}
-	for _, file := range general {
-		data.General = append(data.General, File{
-			Name:        file.Name,
-			NameEscaped: url.PathEscape(file.Name),
-			Size:        byteCountSI(file.Size),
-			Type:        "general",
-		})
-	}
-
-	safety, err := f.FilesService.ListSafety()
-	if err != nil {
-		f.Templates.List.Execute(w, r, data, fmt.Errorf("list safety files: %w", err))
-		return
-	}
-	for _, file := range safety {
-		data.Safety = append(data.Safety, File{
-			Name:        file.Name,
-			NameEscaped: url.PathEscape(file.Name),
-			Size:        byteCountSI(file.Size),
-			Type:        "safety",
-		})
-	}
-
-	user := context.User(r.Context())
-	if user == nil {
-		f.Templates.List.Execute(w, r, data, fmt.Errorf("list schedule files: no user found"))
-		return
-	}
-
-	schedules, err := f.FilesService.ListSchedules(user.SFID)
-	if err != nil {
-		f.Templates.List.Execute(w, r, data, fmt.Errorf("list schedule files: %w", err))
-		return
-	}
-	for _, file := range schedules {
-		_, trimmedName, _ := strings.Cut(file.Name, "-")
-
-		ext := filepath.Ext(trimmedName)
-		if len(trimmedName) >= 36+len(ext) {
-			potentialUUID := trimmedName[len(trimmedName)-36-len(ext) : len(trimmedName)-len(ext)]
-			if _, err := uuid.Parse(potentialUUID); err == nil {
-				trimmedName = strings.TrimSuffix(trimmedName[:len(trimmedName)-36-len(ext)], "-") + ext
-			}
-		}
-
-		if trimmedName != "" {
-			data.Schedules = append(data.Schedules, File{
-				Name:        trimmedName,
-				NameEscaped: url.PathEscape(file.Name),
-				Size:        byteCountSI(file.Size),
-				Type:        "schedule",
-			})
-		}
-	}
-
-	data.FullName = user.FullName
 
 	f.Templates.List.Execute(w, r, data)
 }

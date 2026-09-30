@@ -1,36 +1,85 @@
 {{define "page"}}
-<section>
-  <div class="flex justify-center overflow-hidden relative">
-    <div class="flex relative w-[1140px] justify-between">
-      <div class="z-30 flex p-3 mb-10 mt-10">
-        <h1 class="text-placeholder-light text-[4.50rem] font-bold">{{translate "title"}}</h1>
-      </div>
-    </div>
-    <div class="absolute z-10 flex min-h-full min-w-full items-center justify-center bg-placeholder-dark text-placeholder-light">
-      Placeholder media
-    </div>
-  </div>
-</section>
+<header class="topbar">
+  <button class="menu-button" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <div><button class="bell" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button><button class="help"><b>?</b> Help &amp; support</button></div>
+</header>
 
-<section>
-  <div class="flex relative h-[24px]">
-  </div>
-</section>
+<div class="page-content">
+  <section class="page-heading">
+    <div><span class="eyebrow">Your financial ecosystem</span><h1>Connections</h1><p>Bring your financial life together. Connect your trusted apps and institutions to get a complete view of your money.</p></div>
+    <div class="connection-summary"><span><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span><div><strong id="connectedCount">3 connected</strong><small>All systems healthy</small></div></div>
+  </section>
 
-{{if not (or .General .Safety .Schedules)}}
-<section>
-  <div class="text-placeholder-primary font-medium text-center">{{translate "nofilesfound"}}</div>
-</section>
-{{else}}
-<section>
-  <div class="flex bg-placeholder-light justify-center">
-    <div id="fileList" class="flex relative flex-col w-screen max-w-[1140px] px-4">
-      {{template "fileList" .}}
+  <section class="controls">
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="connectionSearch" type="search" placeholder="Search connections"></label>
+    <div class="filters"><button class="selected" data-filter="all">All <span>8</span></button><button data-filter="connected">Connected <span id="connectedFilter">3</span></button><button data-filter="available">Available <span id="availableFilter">5</span></button></div>
+  </section>
+
+  <section class="catalog">
+    <h2>Available connections</h2><p>Securely link the services you already use.</p>
+    <div class="connection-grid" id="connectionGrid">
+      <article class="connection-card connected-card" data-status="connected" data-search="northstar bank everyday accounts transactions">
+        <div class="card-top"><span class="app-logo northstar">✦</span><span class="status connected"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Connected</span></div><div><h3>Northstar Bank</h3><p>Everyday banking</p></div><div class="card-foot"><small>Accounts &amp; transactions</small><button class="manage">Manage <b>›</b></button></div>
+      </article>
+      <article class="connection-card connected-card" data-status="connected" data-search="vault investments trading portfolio">
+        <div class="card-top"><span class="app-logo vault">V</span><span class="status connected"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Connected</span></div><div><h3>Vault</h3><p>Investments &amp; trading</p></div><div class="card-foot"><small>Portfolio &amp; activity</small><button class="manage">Manage <b>›</b></button></div>
+      </article>
+      <article class="connection-card connected-card" data-status="connected" data-search="pennywise budget goals categories">
+        <div class="card-top"><span class="app-logo pennywise">P</span><span class="status connected"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Connected</span></div><div><h3>Pennywise</h3><p>Budgeting &amp; goals</p></div><div class="card-foot"><small>Budgets &amp; categories</small><button class="manage">Manage <b>›</b></button></div>
+      </article>
+      <article class="connection-card" data-status="available" data-search="coinbase crypto cryptocurrency holdings">
+        <div class="card-top"><span class="app-logo coinbase">C</span><span class="status available">Available</span></div><div><h3>Coinbase</h3><p>Cryptocurrency</p></div><div class="card-foot"><small>Holdings &amp; transactions</small><button class="connect">Connect <b>→</b></button></div>
+      </article>
+      <article class="connection-card" data-status="available" data-search="stripe business payments payouts">
+        <div class="card-top"><span class="app-logo stripe">S</span><span class="status available">Available</span></div><div><h3>Stripe</h3><p>Business payments</p></div><div class="card-foot"><small>Payments &amp; payouts</small><button class="connect">Connect <b>→</b></button></div>
+      </article>
+      <article class="connection-card" data-status="available" data-search="pensionpilot retirement pension projections">
+        <div class="card-top"><span class="app-logo pension">P</span><span class="status available">Available</span></div><div><h3>PensionPilot</h3><p>Retirement planning</p></div><div class="card-foot"><small>Pension &amp; projections</small><button class="connect">Connect <b>→</b></button></div>
+      </article>
+      <article class="connection-card" data-status="available" data-search="homebase mortgage property valuation">
+        <div class="card-top"><span class="app-logo home">⌂</span><span class="status available">Available</span></div><div><h3>Homebase</h3><p>Mortgage &amp; property</p></div><div class="card-foot"><small>Mortgage &amp; valuation</small><button class="connect">Connect <b>→</b></button></div>
+      </article>
+      <article class="connection-card" data-status="available" data-search="taxly tax returns documents">
+        <div class="card-top"><span class="app-logo taxly">T</span><span class="status available">Available</span></div><div><h3>Taxly</h3><p>Tax preparation</p></div><div class="card-foot"><small>Returns &amp; documents</small><button class="connect">Connect <b>→</b></button></div>
+      </article>
     </div>
-  </div>
-</section>
-{{end}}
+    <div class="empty" id="emptyState" hidden>No connections match your search.</div>
+  </section>
 
+  <footer class="trust"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><strong>Your data stays yours.</strong> Connections are read-only, encrypted, and can be removed at any time.</span><a href="#">How we protect your data →</a></footer>
+</div>
+
+<div class="toast" id="toast"><span>✓</span><div><strong>Connection established</strong><small>Your account data is ready to use.</small></div></div>
+<script>
+(() => {
+  const cards = [...document.querySelectorAll('.connection-card')];
+  const filters = [...document.querySelectorAll('[data-filter]')];
+  const search = document.getElementById('connectionSearch');
+  const toast = document.getElementById('toast');
+  let filter = 'all';
+  let timer;
+  function counts() {
+    const connected = cards.filter(card => card.dataset.status === 'connected').length;
+    document.getElementById('connectedCount').textContent = connected + ' connected';
+    document.getElementById('connectedFilter').textContent = connected;
+    document.getElementById('availableFilter').textContent = cards.length - connected;
+    document.querySelector('.nav-count').textContent = connected;
+  }
+  function showCards() {
+    const query = search.value.toLowerCase(); let visible = 0;
+    cards.forEach(card => { card.hidden = !((filter === 'all' || card.dataset.status === filter) && card.dataset.search.includes(query)); if (!card.hidden) visible++; });
+    document.getElementById('emptyState').hidden = visible > 0;
+  }
+  filters.forEach(button => button.onclick = () => { filter = button.dataset.filter; filters.forEach(item => item.classList.toggle('selected', item === button)); showCards(); });
+  search.oninput = showCards;
+  document.querySelectorAll('.connect').forEach(button => button.onclick = () => {
+    const card = button.closest('.connection-card'); card.dataset.status = 'connected'; card.classList.add('connected-card');
+    card.querySelector('.status').className = 'status connected'; card.querySelector('.status').innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Connected';
+    button.className = 'manage'; button.innerHTML = 'Manage <b>›</b>'; counts(); showCards();
+    toast.classList.add('visible'); clearTimeout(timer); timer = setTimeout(() => toast.classList.remove('visible'), 2600);
+  });
+})();
+</script>
 {{end}}
 
 {{define "fileList"}}
